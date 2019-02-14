@@ -121,3 +121,63 @@ test('should remove the state of an experiment from the cookie if no variant was
         .expect(200)
         .expect('set-cookie', `unleash=${cookieValue({})}; Path=/`);
 });
+
+test('should override the state of a feature from the querystring', async t => {
+    t.plan(0);
+    const unleash = new Unleash({
+        features: [{
+            name: 'feature.A',
+            enabled: false,
+        }],
+    });
+
+    const unleashExpressOpts = { overrideTokens: { 'feature.A': 'foo' } };
+    const { app, request: _request } = setupApp({ unleash, unleashExpressOpts });
+    const request = _request.agent(app);
+
+    app.get('/', (req, res) => {
+        res.send(req.unleash.isEnabled('feature.A'));
+    });
+
+    await request
+        .get('/?feature=feature.A:foo')
+        .expect(200)
+        .expect('set-cookie', `unleash=${cookieValue({ 'feature.A': true })}; Path=/`)
+        .expect('true');
+
+    return request
+        .get('/')
+        .expect(200)
+        .expect('set-cookie', `unleash=${cookieValue({ 'feature.A': true })}; Path=/`)
+        .expect('true');
+});
+
+test('should not override the state of a feature from the querystring when an invalid token is passed', async t => {
+    t.plan(0);
+    const unleash = new Unleash({
+        features: [{
+            name: 'feature.A',
+            enabled: false,
+        }],
+    });
+
+    const unleashExpressOpts = { overrideTokens: { 'feature.A': 'foo' } };
+    const { app, request: _request } = setupApp({ unleash, unleashExpressOpts });
+    const request = _request.agent(app);
+
+    app.get('/', (req, res) => {
+        res.send(req.unleash.isEnabled('feature.A'));
+    });
+
+    await request
+        .get('/?feature=feature.A:bar')
+        .expect(200)
+        .expect('set-cookie', `unleash=${cookieValue({})}; Path=/`)
+        .expect('false');
+
+    return request
+        .get('/')
+        .expect(200)
+        .expect('set-cookie', `unleash=${cookieValue({})}; Path=/`)
+        .expect('false');
+});

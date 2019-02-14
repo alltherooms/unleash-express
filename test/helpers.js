@@ -9,7 +9,7 @@ class Unleash {
     }
 
     getToggles() {
-        return this.features;
+        return this.features.features;
     }
 
     experiment(name) {
@@ -36,7 +36,7 @@ class Unleash {
 
 function setupApp(options = {}) {
     const unleash = options.unleash || new Unleash();
-    const unleashExpress = new UnleashExpress(unleash);
+    const unleashExpress = new UnleashExpress(unleash, options.unleashExpressOpts);
 
     const app = express();
     app.use(cookieParser());
